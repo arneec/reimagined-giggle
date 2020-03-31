@@ -11,13 +11,19 @@ from flask import (
     request,
     session,
     url_for,
-    current_app
+    current_app,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from application.db import get_db
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
+
+
+def get_activation_file():
+    return os.path.join(
+        current_app.root_path, "storage", current_app.config["ACTIVATION_FILE"]
+    )
 
 
 @bp.route("/register", methods=("GET", "POST"))
@@ -30,8 +36,8 @@ def register():
         if not username:
             error = "Username is required."
         elif (
-            db.execute("SELECT id FROM user WHERE username = ?", (username,)).fetchone()
-            is not None
+                db.execute("SELECT id FROM user WHERE username = ?", (username,)).fetchone()
+                is not None
         ):
             error = "User {} is already registered.".format(username)
 
@@ -42,20 +48,34 @@ def register():
                 (username, generate_password_hash(password)),
             )
             db.commit()
-            activation_file = os.path.join(current_app.root_path, 'storage', current_app.config['ACTIVATION_FILE'])
-            if os.path.exists(activation_file) and open(activation_file, 'r').read():
-                pass
-            else:
-                open(activation_file, 'w').write(uuid.uuid4().hex)
-            return redirect(url_for("auth.login"))
+            activation_file = get_activation_file()
+            open(activation_file, "w").write(uuid.uuid4().hex)
+            return redirect(url_for("auth.activate", username=username))
 
         flash(error)
 
     return render_template("auth/register.html")
 
 
-@bp.route("/activate", methods=("GET", "POST"))
-def activate():
+@bp.route("/activate/<username>", methods=("GET", "POST"))
+def activate(username):
+    if request.method == "POST":
+        activation_code = request.form["activation"]
+        activation_file = get_activation_file()
+        error = None
+
+        if not activation_code:
+            error = "Activation code is required."
+        elif not os.path.exists(activation_file) or open(activation_file, 'r').read() != activation_code:
+            error = "Invalid activation code."
+        else:
+            db = get_db()
+            db.execute("UPDATE user SET is_registered = ? WHERE username = ?", (True, username))
+            db.commit()
+            return "Activation successful"
+
+        flash(error)
+
     return render_template("auth/activate.html")
 
 

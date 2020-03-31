@@ -1,0 +1,18 @@
+{% extends '_base.html' %}
+
+{% block header %}
+<h1>{% block title %}Activate account{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<div>
+    <form method="post">
+        <div class="form-group">
+            <label for="activationInput">Activation Code</label>
+            <input type="text" class="form-control" name="activation" id="activationInput"
+                placeholder="Enter activation code">
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+{% endblock %}
