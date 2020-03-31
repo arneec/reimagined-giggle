@@ -5,6 +5,10 @@
 ```$ pip install -r requirements.txt```
 
 
+#### Initializing the db
+
+```$ flask init-db```
+
 #### Running the application
 
 ```$ flask run```

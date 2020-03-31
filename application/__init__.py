@@ -12,10 +12,8 @@ def create_app():
         DATABASE=db_path
     )
 
-    if not os.path.exists(db_path):
-        with app.app_context():
-            from .db import init_db
-            init_db()
+    from . import db
+    db.init_app(app)
 
     @app.route('/hello')
     def hello():
