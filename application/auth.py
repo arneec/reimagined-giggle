@@ -76,7 +76,7 @@ def activate(username):
             db = get_db()
             db.execute("UPDATE user SET is_registered = ? WHERE username = ?", (True, username))
             db.commit()
-            return "Activation successful"
+            return redirect(url_for("auth.login"))
 
         flash(error)
 
@@ -85,8 +85,11 @@ def activate(username):
 
 @bp.route("/login", methods=("GET", "POST"))
 def login():
+    if g.user is not None:
+        return redirect(url_for("home"))
+
     if request.method == "POST":
-        username = request.form["username"] @ bp.before_app_request
+        username = request.form["username"]
         password = request.form["password"]
         db = get_db()
         error = None
@@ -102,13 +105,14 @@ def login():
         if error is None:
             session.clear()
             session["user_id"] = user["id"]
-            return redirect(url_for("index"))
+            return redirect(url_for("home"))
 
         flash(error)
 
     return render_template("auth/login.html")
 
 
+@bp.before_app_request
 def load_logged_in_user():
     user_id = session.get("user_id")
 
@@ -135,7 +139,7 @@ def load_logged_in_user():
 @bp.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("index"))
+    return redirect(url_for("auth.login"))
 
 
 def login_required(view):

@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask
+from flask import Flask, render_template
 
 
 def create_app():
@@ -14,11 +14,13 @@ def create_app():
     )
 
     from . import db
-
     db.init_app(app)
 
     from . import auth
-
     app.register_blueprint(auth.bp)
+
+    @app.route('/home', methods=("GET",))
+    def home():
+        return render_template("home.html")
 
     return app
