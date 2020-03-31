@@ -1,0 +1,17 @@
+{% extends '_base.html' %}
+
+{% block header %}
+<h1>{% block title %}Register{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<div>
+    <form method="post">
+        <div class="form-group">
+            <label for="usernameInput">Username</label>
+            <input type="text" class="form-control" name="username" id="usernameInput" placeholder="Enter username">
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+{% endblock %}
