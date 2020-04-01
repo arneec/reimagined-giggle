@@ -2,6 +2,8 @@ import os
 
 from flask import Flask, render_template
 
+from application.tasks import scrape_movie_command
+
 
 def create_app():
     app = Flask(__name__)
@@ -18,6 +20,8 @@ def create_app():
 
     from . import auth
     app.register_blueprint(auth.bp)
+
+    app.cli.add_command(scrape_movie_command)
 
     @app.route('/home', methods=("GET",))
     def home():
