@@ -6,3 +6,21 @@ CREATE TABLE user (
   password TEXT NOT NULL,
   is_registered INTEGER NOT NULL DEFAULT 0
 );
+
+
+CREATE TABLE `movies` (
+	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	`name`	TEXT NOT NULL,
+	`summary`	TEXT,
+	`released_year`	INTEGER,
+	`duration`	TEXT
+);
+
+
+CREATE TABLE `movie_details` (
+	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	`movie_id`	INTEGER NOT NULL,
+	`key`	TEXT NOT NULL,
+	`value`	TEXT NOT NULL,
+	FOREIGN KEY(`movie_id`) REFERENCES `movies`(`id`)
+);
