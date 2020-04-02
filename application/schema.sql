@@ -1,4 +1,6 @@
 DROP TABLE IF EXISTS user;
+DROP TABLE IF EXISTS movie;
+DROP TABLE IF EXISTS movie_detail;
 
 CREATE TABLE user (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -8,16 +10,16 @@ CREATE TABLE user (
 );
 
 
-CREATE TABLE `movies` (
+CREATE TABLE `movie` (
 	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-	`name`	TEXT NOT NULL,
-	`summary`	TEXT NOT NULL,
+	`name`	TEXT UNIQUE NOT NULL,
+	`description`	TEXT NOT NULL,
 	`released_date` TEXT NOT NULL,
 	`rating`    REAL NOT NULL
 );
 
 
-CREATE TABLE `movie_details` (
+CREATE TABLE `movie_detail` (
 	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 	`movie_id`	INTEGER NOT NULL,
 	`key`	TEXT NOT NULL,
