@@ -11,9 +11,9 @@ CREATE TABLE user (
 CREATE TABLE `movies` (
 	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 	`name`	TEXT NOT NULL,
-	`summary`	TEXT,
-	`released_year`	INTEGER,
-	`duration`	TEXT
+	`summary`	TEXT NOT NULL,
+	`released_date` TEXT NOT NULL,
+	`rating`    REAL NOT NULL
 );
 
 
