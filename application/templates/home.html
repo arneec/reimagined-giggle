@@ -1,18 +1,41 @@
 {% extends '_base.html' %}
 
 {% block header %}
-<h1>{% block title %}Home{% endblock %}</h1>
+<h1>{% block title %}Movie Quiz{% endblock %}</h1>
 {% endblock %}
 
 {% block content %}
 <div>
-    <div>
+    <div class="mb-3">
         <button class="btn btn-primary">Take the movie quiz</button>
     </div>
-    <div>
-        <table>
-            <thead></thead>
-            <tbody></tbody>
+    <div class="py-3">
+        <h2 class="text-muted mb-3">Leaderboards</h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Username</th>
+                <th scope="col">Score</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <th scope="row">1</th>
+                <td>Mark</td>
+                <td>9</td>
+            </tr>
+            <tr>
+                <th scope="row">2</th>
+                <td>Jacob</td>
+                <td>7</td>
+            </tr>
+            <tr>
+                <th scope="row">3</th>
+                <td>Larry</td>
+                <td>5</td>
+            </tr>
+            </tbody>
         </table>
     </div>
 </div>

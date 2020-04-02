@@ -7,15 +7,22 @@
 <body>
 <div class="container-fluid">
     <nav>
-        <h1>Movie Quiz</h1>
-        <ul>
+        <ul class="nav justify-content-end">
             {% if g.user %}
-            <li><span>{{ g.user['username'] }}</span>
-            <li><a href="{{ url_for('auth.logout') }}">Log Out</a>
-                {% else %}
-            <li><a href="{{ url_for('auth.register') }}">Register</a>
-            <li><a href="{{ url_for('auth.login') }}">Log In</a>
-                {% endif %}
+            <li class="nav-item">
+                <span class="nav-link">Hi, {{ g.user['username'] }}</span>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">Log Out</a>
+            </li>
+            {% else %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('auth.login') }}">Log In</a>
+            </li>
+            {% endif %}
         </ul>
     </nav>
     <section class="content">
