@@ -4,7 +4,7 @@ from flask import Flask, render_template, session, g
 
 from application.db import get_db
 from application.auth import login_required
-from application.tasks import scrape_movie_data_command, scrape_populate_movie_command
+from application.tasks import scrape_movie_command, scrape_home_movies_command
 
 
 def create_app():
@@ -25,8 +25,8 @@ def create_app():
     app.register_blueprint(auth.bp)
     app.register_blueprint(quiz.bp)
 
-    app.cli.add_command(scrape_movie_data_command)
-    app.cli.add_command(scrape_populate_movie_command)
+    app.cli.add_command(scrape_movie_command)
+    app.cli.add_command(scrape_home_movies_command)
 
     @app.before_request
     def load_logged_in_user():

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig()
 
 IMDB_URL = r'https://www.imdb.com'
-MOVIE_URL_REGEX = r'title/.{5,15}/?ref_=.+$'
+MOVIE_URL_REGEX = r'title/.{5,15}$'
 
 
 def exception_handler(f):
@@ -46,20 +46,41 @@ def get_response(url, method='get'):
 
 
 @exception_handler
-def scrape_movies_list():
-    response = get_response(IMDB_URL)
+def _populate_movie(movie_data):
+    db = get_db()
+    cursor = db.execute(
+        "INSERT INTO movie (name, description, rating, released_date) VALUES (?, ?, ?, ?)",
+        (movie_data['general']['name'], movie_data['general']['description'], movie_data['general']['rating'],
+         movie_data['general']['released_date'])
+    )
+    movie_id = cursor.lastrowid
+    db.executemany(
+        "INSERT INTO movie_detail (movie_id, key, value) VALUES (?, ?, ?)",
+        [(movie_id, *key_value) for key_value in movie_data['movie_detail']]
+    )
+    db.commit()
+
+
+def _scrape_movies_list(link='/'):
+    """
+        link: default to IMDB home page url
+    """
+    response = get_response('%s%s' % (IMDB_URL, link))
     soup = BeautifulSoup(response.text, features='html.parser')
     movies = soup.find_all('a', {'href': re.compile(MOVIE_URL_REGEX)})
     return [i.get('href') for i in movies]
 
 
 @exception_handler
-def scrape_movie_data(link):
+def _scrape_movie_data(link):
     response = get_response(r'%s/%s' % (IMDB_URL, link))
     soup = BeautifulSoup(response.text, features='html.parser')
     soup = soup.find('script', {'type': 'application/ld+json'})
     assert soup is not None, "Failed to scrap %s" % link
     data = json.loads(soup.text)
+    if data['@type'] != 'Movie':
+        pprint("Skipping %s as it is not a movie." % link)
+        return None
     movie_data = {
         'general': {
             'name': data['name'],
@@ -85,7 +106,9 @@ def scrape_movie_data(link):
 
 @click.command("scrape-movie")
 @click.argument("link")
-def scrape_movie_data_command(link):
+@click.option('--populate', is_flag=True)
+@with_appcontext
+def scrape_movie_command(link, populate):
     """
         scrapes & displays the movie data for given movie link.
         **check example below for movie link(url) format to pass on**
@@ -95,37 +118,34 @@ def scrape_movie_data_command(link):
         eg.
         $ flask scrape-movie 'title/tt2398149/?ref_=ttls_li_tt'
 
+        _To populate db add --populate flag_
+        $ flask scrape-movie ''title/tt2398149/?ref_=ttls_li_tt' --populate
+
     """
-    movie_data = scrape_movie_data(link)
+    movie_data = _scrape_movie_data(link)
+    if populate and movie_data is not None:
+        _populate_movie(movie_data)
     pprint(movie_data)
 
 
-@click.command("scrape-populate-movie")
-@click.argument("link")
+@click.command("scrape-home-movies")
+@click.option('--link', default=None, help='IMDB link to crawl and scrape movies list from')
+@click.option('--populate', is_flag=True)
 @with_appcontext
-def scrape_populate_movie_command(link):
+def scrape_home_movies_command(link, populate):
     """
-        scrapes & populates the database for given movie link
-        **check example below for movie link(url) format to pass on**
+        crawl movie links and scrape those movies data
 
-        $ flask scrape-populate-movie <link>
-
-        eg.
-        $ flask scrape-populate-movie 'title/tt2398149/?ref_=ttls_li_tt'
-
+        _To populate db with some popular movies_
+        $ flask scrape-home-movies --link '/search/title/?groups=top_250&sort=user_rating' --populate
     """
-    movie_data = scrape_movie_data(link)
-    db = get_db()
-    print(movie_data)
-    cursor = db.execute(
-        "INSERT INTO movie (name, description, rating, released_date) VALUES (?, ?, ?, ?)",
-        (movie_data['general']['name'], movie_data['general']['description'], movie_data['general']['rating'],
-         movie_data['general']['released_date'])
-    )
-    movie_id = cursor.lastrowid
-    db.executemany(
-        "INSERT INTO movie_detail (movie_id, key, value) VALUES (?, ?, ?)",
-        [(movie_id, *key_value) for key_value in movie_data['movie_detail']]
-    )
-    db.commit()
-    pprint(movie_data)
+    if link is None:
+        links = _scrape_movies_list()
+    else:
+        links = _scrape_movies_list(link)
+    for _ in links:
+        pprint("Scrapping %s" % _)
+        movie_data = _scrape_movie_data(_)
+        if populate and movie_data is not None:
+            _populate_movie(movie_data)
+        pprint(movie_data)
