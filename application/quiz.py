@@ -43,7 +43,8 @@ def rating_options(rating: str, num: int = 3):
 def released_date_options(released_date: str, num: int = 3):
     db = get_db()
     released_dates = db.execute(
-        F"SELECT released_date FROM movie WHERE released_date != ? RANDOM LIMIT {num}", (released_date,)).fetchall()
+        F"SELECT released_date FROM movie WHERE released_date != ? ORDER BY RANDOM() LIMIT {num}",
+        (released_date,)).fetchall()
     return [i['released_date'] for i in released_dates]
 
 
@@ -53,9 +54,9 @@ def randomly_group_items(items, answers, tot_grps=3, max_per_grp=3):
     indx = 0
     while True:
         pick_no_items = random.randint(1, max_per_grp)
-        group = items[indx:pick_no_items]
+        group = items[indx:indx+pick_no_items]
         if group not in groups and group != answers:
-            groups.append(items[indx:pick_no_items])
+            groups.append(group)
             if len(groups) == tot_grps:
                 break
         indx += pick_no_items
@@ -65,8 +66,9 @@ def randomly_group_items(items, answers, tot_grps=3, max_per_grp=3):
 
 def movie_detail_options(field, *answers: str):
     db = get_db()
-    items = db.execute("SELECT * FROM movie_detail WHERE key = ?", (field,)).fetchall()
-    return randomly_group_items(items, answers, tot_grps=3, max_per_grp=1)
+    movie_details = db.execute("SELECT * FROM movie_detail WHERE key = ?", (field,)).fetchall()
+    items = [i['value'] for i in movie_details]
+    return randomly_group_items(items, answers, tot_grps=3, max_per_grp=3)
 
 
 QuestionTemplate = namedtuple('QuestionTemplate', ('question_template', 'field', 'table', 'get_option'))
@@ -82,7 +84,7 @@ QUESTION_TEMPLATES = (
         question_template='When was the movie {name} released ?',
         field='released_date',
         table='movie',
-        get_option=rating_options
+        get_option=released_date_options
     ),
     QuestionTemplate(
         question_template='What best describes the movie {name} ?',
@@ -124,7 +126,7 @@ def generate_random_question(quiz_id, question_no):
         - from same movie only allow 3 questions at max.
     """
     db = get_db()
-    movie = db.execute("SELECT * FROM movie RANDOM").fetchone()
+    movie = db.execute("SELECT * FROM movie ORDER BY RANDOM()").fetchone()
     if question_no > 1:
         exclude_fields = [i['fields'] for i in
                           db.execute("SELECT field FROM quiz_questions WHERE quiz_id = ? AND movie_id = ?",
@@ -135,14 +137,17 @@ def generate_random_question(quiz_id, question_no):
     random_no = random.randint(0, len(question_templates) - 1)
     template = question_templates[random_no]
     if template.table == 'movie_detail':
-        movie_details = db.execute(F'''SELECT * FROM movie
-                                       INNER JOIN movie_detail
-                                       WHERE movie_id = ? AND key = ?''', (movie['id'], template.field,)).fetchall()
-        answers = [i['value'] for i in movie_details]
+        movie_details = db.execute('''SELECT * FROM movie INNER JOIN movie_detail
+                                      ON movie.id = movie_detail.movie_id
+                                      WHERE movie.id = ? AND movie_detail.key = ?''',
+                                   (movie['id'], template.field)).fetchall()
+        answer = [i['value'] for i in movie_details]
+        options = template.get_option(*answer)
     else:
-        answers = [movie[template.field]]
+        answer = movie[template.field]
+        options = template.get_option(answer)
     ques = template.question_template.format(**movie, verb='are')
-    return ques, answers
+    return ques, answer, options
 
 
 @bp.route("/<quiz_id>/question", methods=("GET", "POST"))
