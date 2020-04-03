@@ -119,7 +119,7 @@ def scrape_movie_command(link, populate):
         $ flask scrape-movie 'title/tt2398149/?ref_=ttls_li_tt'
 
         _To populate db add --populate flag_
-        $ flask scrape-movie ''title/tt2398149/?ref_=ttls_li_tt' --populate
+        $ flask scrape-movie 'title/tt2398149/?ref_=ttls_li_tt' --populate
 
     """
     movie_data = _scrape_movie_data(link)

@@ -34,13 +34,11 @@
                 {% block header %}{% endblock %}
             </header>
             <hr/>
-            {% if get_flashed_messages() %}
-            <div class="alert alert-danger">
-                {% for message in get_flashed_messages() %}
+            {% for category, message in get_flashed_messages(with_categories=true) %}
+            <div class="alert {%if category != 'message'%}alert-{{category}}{%else%}alert-info{%endif%}">
                 <div class="flash">{{ message }}</div>
-                {% endfor %}
             </div>
-            {% endif %}
+            {% endfor %}
             {% block content %}{% endblock %}
         </div>
     </section>

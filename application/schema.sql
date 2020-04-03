@@ -54,7 +54,7 @@ CREATE TABLE `quiz_question` (
     `created_at` TEXT NOT NULL,
     FOREIGN KEY(`quiz_id`) REFERENCES `quiz`(`id`),
     FOREIGN KEY(`movie_id`) REFERENCES `movie`(`id`),
-    UNIQUE(`movie_id`, `field`)
+    UNIQUE(`quiz_id`, `movie_id`, `field`)
 );
 
 

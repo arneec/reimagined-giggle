@@ -15,7 +15,9 @@ def create_app():
         SECRET_KEY=os.environ.get("SECRET_KEY"),
         DATABASE=db_path,
         ACTIVATION_FILE=os.environ.get("ACTIVATION_FILE"),
-        DATETIME_FORMAT=os.environ.get("DATETIME_FORMAT")
+        DATETIME_FORMAT=os.environ.get("DATETIME_FORMAT"),
+        QUESTION_TIMEOUT_SECONDS=os.environ.get("QUESTION_TIMEOUT_SECONDS"),
+        QUIZ_TIMEOUT_SECONDS=os.environ.get("QUIZ_TIMEOUT_SECONDS"),
     )
 
     from . import db

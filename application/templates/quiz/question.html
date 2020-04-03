@@ -7,6 +7,20 @@
 {% block content %}
 <div>
     <h2 class="text-muted">Question #{{question_no}}</h2>
-    <p>{{question}}</p>
+    <h4 class="my-4">{{question}}</h4>
+    <form method="post">
+        {% for opt in options %}
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="answer" id="exampleRadios{{loop.index}}"
+                   value="{{opt.0}}">
+            <label class="form-check-label" for="exampleRadios{{loop.index}}">
+                {{ opt.1 | safe }}
+            </label>
+        </div>
+        {% endfor %}
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+    </form>
 </div>
 {% endblock %}
