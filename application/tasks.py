@@ -64,7 +64,7 @@ def scrape_movie_data(link):
         'general': {
             'name': data['name'],
             'description': data['description'],
-            'rating': data['aggregateRating']['ratingValue'],
+            'rating': '%.1f' % float(data['aggregateRating']['ratingValue']),
             'released_date': data['datePublished'],
         },
         'movie_detail': [('genre', i) for i in data['genre']] if isinstance(data['genre'], list) else [
@@ -116,6 +116,7 @@ def scrape_populate_movie_command(link):
     """
     movie_data = scrape_movie_data(link)
     db = get_db()
+    print(movie_data)
     cursor = db.execute(
         "INSERT INTO movie (name, description, rating, released_date) VALUES (?, ?, ?, ?)",
         (movie_data['general']['name'], movie_data['general']['description'], movie_data['general']['rating'],

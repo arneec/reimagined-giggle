@@ -45,13 +45,16 @@ CREATE TABLE `quiz_state` (
 CREATE TABLE `quiz_question` (
     `id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     `quiz_id` INTEGER NOT NULL,
+    `movie_id` INTEGER NOT NULL,
+    `field` TEXT NOT NULL,
     `question_no` INTEGER NOT NULL,
     `question` TEXT NOT NULL,
-    `correct_answer` TEXT NOT NULL,
     `user_answer` TEXT,
     `locked` INTEGER NOT NULL DEFAULT 0,
     `created_at` TEXT NOT NULL,
-    FOREIGN KEY(`quiz_id`) REFERENCES `quiz`(`id`)
+    FOREIGN KEY(`quiz_id`) REFERENCES `quiz`(`id`),
+    FOREIGN KEY(`movie_id`) REFERENCES `movie`(`id`),
+    UNIQUE(`movie_id`, `field`)
 );
 
 
@@ -59,5 +62,7 @@ CREATE TABLE `question_option` (
     `id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     `question_id` INTEGER NOT NULL,
     `option` TEXT NOT NULL,
-    FOREIGN KEY(`question_id`) REFERENCES `question`(`id`)
+    `is_correct` INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY(`question_id`) REFERENCES `question`(`id`),
+    UNIQUE(`question_id`, `option`)
 );
