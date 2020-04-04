@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig()
 
 IMDB_URL = r'https://www.imdb.com'
-MOVIE_URL_REGEX = r'title/.{5,15}$'
+MOVIE_URL_REGEX = r'title/[a-z0-9]+(/|\?|/\?)?.*$'
 
 
 def exception_handler(f):
@@ -79,7 +79,7 @@ def _scrape_movie_data(link):
     assert soup is not None, "Failed to scrap %s" % link
     data = json.loads(soup.text)
     if data['@type'] != 'Movie':
-        pprint("Skipping %s as it is not a movie." % link)
+        print("\nSkipping %s as it is not a movie." % link)
         return None
     description = re.sub(data['name'], '', data['description'], flags=re.I)
     movie_data = {
@@ -141,6 +141,7 @@ def scrape_home_movies_command(link, populate):
         $ flask scrape-home-movies --link '/search/title/?groups=top_250&sort=user_rating' --populate
     """
     if link is None:
+        print('\nScraping home page')
         links = _scrape_movies_list()
     else:
         links = _scrape_movies_list(link)
@@ -149,4 +150,4 @@ def scrape_home_movies_command(link, populate):
         movie_data = _scrape_movie_data(_)
         if populate and movie_data is not None:
             _populate_movie(movie_data)
-        pprint(movie_data)
+            pprint(movie_data)
