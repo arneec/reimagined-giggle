@@ -1,10 +1,13 @@
 import os
 
 from logging.config import dictConfig
+
+import werkzeug
 from flask import Flask, render_template, session, g
 
 from application.db import get_db
 from application.auth import login_required
+from application.helpers import render_404
 from application.tasks import scrape_movie_command, scrape_home_movies_command
 
 dictConfig({
@@ -57,6 +60,11 @@ def create_app():
             g.user = (
                 get_db().execute("SELECT * FROM user WHERE id = ?", (user_id,)).fetchone()
             )
+
+    @app.errorhandler(werkzeug.exceptions.BadRequest)
+    @app.errorhandler(werkzeug.exceptions.NotFound)
+    def handle_bad_request(e):
+        return render_404()
 
     @app.errorhandler(Exception)
     def handle_exception(e):

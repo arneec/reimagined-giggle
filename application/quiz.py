@@ -148,7 +148,7 @@ def _generate_random_question(db, quiz_id, question_no):
         options = template.get_option(*answer)
         answer = ', '.join(answer)
     else:
-        answer = movie[template.field]
+        answer = str(movie[template.field])
         options = template.get_option(answer)
     question = template.question_template.format(**movie, verb='are')
     now = datetime.datetime.now().strftime(current_app.config['DATETIME_FORMAT'])
