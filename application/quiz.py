@@ -72,7 +72,9 @@ def randomly_group_items(items, answers, tot_grps=3, max_per_grp=3):
 
 def movie_detail_options(field, *answers: str):
     db = get_db()
-    movie_details = db.execute("SELECT * FROM movie_detail WHERE key = ?", (field,)).fetchall()
+    placeholders = ", ".join("?" * len(answers))
+    movie_details = db.execute(F"SELECT * FROM movie_detail WHERE key = ? AND value NOT IN ({placeholders})",
+                               (field, *answers)).fetchall()
     items = [i['value'] for i in movie_details]
     return randomly_group_items(items, answers, tot_grps=3, max_per_grp=3)
 
@@ -184,7 +186,7 @@ def score(quiz_id):
         "INNER JOIN quiz_question on quiz_state.id=quiz_question.quiz_id "
         "LEFT OUTER JOIN question_option on quiz_question.user_answer = question_option.id "
         "WHERE quiz_state.id = ? ORDER BY quiz_question.question_no",
-        quiz_id).fetchall()
+        (quiz_id,)).fetchall()
 
     score = str(sum(i['is_correct'] for i in quiz_log if i['is_correct']))
     return render_template('quiz/score.html', quiz_log=quiz_log, score=score)
@@ -221,7 +223,7 @@ def question(quiz_id):
         return context
 
     def _quiz_complete_action(db):
-        db.execute("UPDATE quiz_state SET locked = 1 WHERE id = ?", quiz_id)
+        db.execute("UPDATE quiz_state SET locked = 1 WHERE id = ?", (quiz_id,))
         db.commit()
         return redirect(url_for('quiz.score', quiz_id=quiz_id))
 
@@ -293,12 +295,11 @@ def question(quiz_id):
                                         "WHERE quiz_question.id = ? AND is_correct = 1",
                                         (question_id,)).fetchone()
             if str(correct_option['option_id']) == answer:
-                db.execute("UPDATE quiz_state SET score = score + 1 WHERE id = ?", quiz_id)
-                flash("Correct answer.", category='success')
+                flash("Correct answer", category='success')
             else:
-                flash("Wrong answer.", category='danger')
+                flash("Wrong answer", category='danger')
         else:
-            flash("Wrong answer.", category='danger')
+            flash("Skipped question #%s" % quiz_ques['question_no'], category='warning')
 
         db.execute("UPDATE quiz_question SET user_answer = ?, locked = 1 WHERE id = ?", (answer, question_id))
         if quiz_ques['question_no'] >= 10:
