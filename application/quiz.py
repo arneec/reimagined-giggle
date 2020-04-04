@@ -22,7 +22,7 @@ bp = Blueprint("quiz", __name__, url_prefix="/quiz")
 def is_game_alive(date_time: str) -> bool:
     now = datetime.datetime.now()
     return datetime.datetime.strptime(date_time, current_app.config['DATETIME_FORMAT']) + datetime.timedelta(
-        minutes=30) > now
+        seconds=current_app.config['QUIZ_TIMEOUT_SECONDS']) > now
 
 
 def rating_options(rating: str, num: int = 3):
@@ -60,7 +60,7 @@ def randomly_group_items(items, answers, tot_grps=3, max_per_grp=3):
     indx = 0
     while True:
         pick_no_items = random.randint(1, max_per_grp)
-        group = items[indx:indx + pick_no_items]
+        group = set(items[indx:indx + pick_no_items])
         if group not in groups and group != answers:
             groups.append(group)
             if len(groups) == tot_grps:
@@ -73,8 +73,9 @@ def randomly_group_items(items, answers, tot_grps=3, max_per_grp=3):
 def movie_detail_options(field, *answers: str):
     db = get_db()
     placeholders = ", ".join("?" * len(answers))
-    movie_details = db.execute(F"SELECT * FROM movie_detail WHERE key = ? AND value NOT IN ({placeholders})",
-                               (field, *answers)).fetchall()
+    movie_details = db.execute(
+        F"SELECT DISTINCT value FROM movie_detail WHERE key = ? AND value NOT IN ({placeholders})",
+        (field, *answers)).fetchall()
     items = [i['value'] for i in movie_details]
     return randomly_group_items(items, answers, tot_grps=3, max_per_grp=3)
 
@@ -152,7 +153,7 @@ def _generate_random_question(db, quiz_id, question_no):
                                       ON movie.id = movie_detail.movie_id
                                       WHERE movie.id = ? AND movie_detail.key = ?''',
                                    (movie['id'], template.field)).fetchall()
-        answer = [i['value'] for i in movie_details]
+        answer = {i['value'] for i in movie_details}
         options = template.get_option(*answer)
         answer = ', '.join(answer)
     else:
@@ -167,7 +168,7 @@ def _generate_random_question(db, quiz_id, question_no):
     db.execute("INSERT INTO question_option (question_id, option, is_correct) VALUES (?, ?, ?)",
                (quiz_question.lastrowid, answer, 1))
     db.executemany("INSERT INTO question_option (question_id, option) VALUES (?, ?)",
-                   [(quiz_question.lastrowid, ', '.join(opt) if isinstance(opt, list) else opt) for opt in options])
+                   [(quiz_question.lastrowid, ', '.join(opt) if isinstance(opt, set) else opt) for opt in options])
     return quiz_question.lastrowid
 
 
@@ -253,7 +254,7 @@ def question(quiz_id):
 
         elif datetime.datetime.strptime(quiz_ques['created_at'],
                                         current_app.config['DATETIME_FORMAT']) + datetime.timedelta(
-            seconds=int(current_app.config['QUESTION_TIMEOUT_SECONDS'])) <= now:
+            seconds=current_app.config['QUESTION_TIMEOUT_SECONDS']) <= now:
             if quiz_ques['question_no'] >= 10:
                 return _quiz_complete_action(db)
 
@@ -279,7 +280,7 @@ def question(quiz_id):
         elif datetime.datetime.strptime(
                 quiz_ques['created_at'],
                 current_app.config['DATETIME_FORMAT']) + datetime.timedelta(
-            seconds=int(current_app.config['QUESTION_TIMEOUT_SECONDS'])) <= now:
+            seconds=current_app.config['QUESTION_TIMEOUT_SECONDS']) <= now:
             db.execute("UPDATE quiz_question SET locked = 1 WHERE quiz_id = ? AND locked = 0", (quiz_id,))
 
             flash("Question expired.", category='warning')
@@ -330,6 +331,7 @@ def create_quiz():
     quiz_states = db.execute("SELECT * FROM quiz_state WHERE user_id = ? AND locked = 0", (g.user['id'],)).fetchall()
     if quiz_states:
         if is_game_alive(quiz_states[-1]['created_at']):
+            flash("You have incomplete quiz", category='info')
             return redirect(url_for('quiz.question', quiz_id=quiz_states[-1]['id']))
 
         else:

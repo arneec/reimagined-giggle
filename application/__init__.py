@@ -1,10 +1,27 @@
 import os
 
+from logging.config import dictConfig
 from flask import Flask, render_template, session, g
 
 from application.db import get_db
 from application.auth import login_required
 from application.tasks import scrape_movie_command, scrape_home_movies_command
+
+dictConfig({
+    'version': 1,
+    'formatters': {'default': {
+        'format': '[%(asctime)s] %(levelname)s: %(message)s',
+    }},
+    'handlers': {'file': {
+        'class': 'logging.FileHandler',
+        'filename': 'app.logs',
+        'formatter': 'default'
+    }},
+    'root': {
+        'level': 'INFO',
+        'handlers': ['file']
+    }
+})
 
 
 def create_app():
@@ -16,8 +33,8 @@ def create_app():
         DATABASE=db_path,
         ACTIVATION_FILE=os.environ.get("ACTIVATION_FILE"),
         DATETIME_FORMAT=os.environ.get("DATETIME_FORMAT"),
-        QUESTION_TIMEOUT_SECONDS=os.environ.get("QUESTION_TIMEOUT_SECONDS"),
-        QUIZ_TIMEOUT_SECONDS=os.environ.get("QUIZ_TIMEOUT_SECONDS"),
+        QUESTION_TIMEOUT_SECONDS=int(os.environ.get("QUESTION_TIMEOUT_SECONDS")),
+        QUIZ_TIMEOUT_SECONDS=int(os.environ.get("QUIZ_TIMEOUT_SECONDS")),
     )
 
     from . import db
@@ -40,6 +57,11 @@ def create_app():
             g.user = (
                 get_db().execute("SELECT * FROM user WHERE id = ?", (user_id,)).fetchone()
             )
+
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        app.logger.exception(e)
+        return '<h1>Some error occurred in the server.</h1><p>Please REFRESH to continue.</p>'
 
     @app.route('/home', methods=("GET",))
     @login_required

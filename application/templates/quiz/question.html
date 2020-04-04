@@ -7,7 +7,12 @@
 {% block content %}
 <div>
     <h2 class="text-muted">Question #{{question_no}}</h2>
-    <h4 class="my-4">{{question}}</h4>
+    <h4 class="my-3">{{question}}</h4>
+    <div class="my-3">
+        <small class="text-muted">*Note: Each question will expire in {{ config.QUESTION_TIMEOUT_SECONDS // 60 }} minutes and
+            whole quiz will expire in {{ config.QUIZ_TIMEOUT_SECONDS // 60 }} minutes.
+        </small>
+    </div>
     <form method="post">
         {% for opt in options %}
         <div class="form-check">
