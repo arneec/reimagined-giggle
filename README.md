@@ -44,8 +44,8 @@ _eg. populate db with some popular movies_
 ```$ flask scrape-movie 'title/tt2398149/?ref_=ttls_li_tt' --populate```
 
 
-###Database and tables
-tables definitions for the database are in ```/appliation/schema.sql```
+### Database and tables
+tables definitions for the database are in ```/application/schema.sql```
 
 
 ### User register and login
