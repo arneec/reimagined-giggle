@@ -169,6 +169,27 @@ def _generate_random_question(db, quiz_id, question_no):
     return quiz_question.lastrowid
 
 
+@bp.route("/<quiz_id>/score", methods=("GET", "POST"))
+@login_required
+def score(quiz_id):
+    db = get_db()
+    quiz_state = db.execute("SELECT * FROM quiz_state WHERE id = ? AND user_id = ? AND locked = 1",
+                            (quiz_id, g.user['id'])).fetchone()
+    if quiz_state is None:
+        return render_404()
+
+    quiz_log = db.execute(
+        "SELECT quiz_question.question_no, quiz_question.question, question_option.option, question_option.is_correct "
+        "FROM quiz_state "
+        "INNER JOIN quiz_question on quiz_state.id=quiz_question.quiz_id "
+        "LEFT OUTER JOIN question_option on quiz_question.user_answer = question_option.id "
+        "WHERE quiz_state.id = ? ORDER BY quiz_question.question_no",
+        quiz_id).fetchall()
+
+    score = str(sum(i['is_correct'] for i in quiz_log if i['is_correct']))
+    return render_template('quiz/score.html', quiz_log=quiz_log, score=score)
+
+
 @bp.route("/<quiz_id>/question", methods=("GET", "POST"))
 @login_required
 def question(quiz_id):
@@ -182,7 +203,7 @@ def question(quiz_id):
             - last question number (10) lock and quiz lock happens in same transaction in atomic state
     """
 
-    def get_context(question_id):
+    def _get_context(question_id):
         db = get_db()
         quiz_ques_options = db.execute("SELECT quiz_question.id AS qid, "
                                        "question_option.id AS option_id, "
@@ -199,6 +220,11 @@ def question(quiz_id):
 
         return context
 
+    def _quiz_complete_action(db):
+        db.execute("UPDATE quiz_state SET locked = 1 WHERE id = ?", quiz_id)
+        db.commit()
+        return redirect(url_for('quiz.score', quiz_id=quiz_id))
+
     def get():
         db = get_db()
         quiz_state = db.execute("SELECT * FROM quiz_state WHERE id = ? AND user_id = ?",
@@ -208,13 +234,13 @@ def question(quiz_id):
             return render_template('404.html'), 404
 
         if quiz_state['locked']:
-            # get game summary and return
-            return render_404()
+            flash('Quiz complete.', category='info')
+            return redirect(url_for('quiz.score', quiz_id=quiz_id))
 
         if not is_game_alive(quiz_state['created_at']):
             db.execute("UPDATE quiz_state SET locked = 1 WHERE id = ? AND locked = 0", (quiz_id,))
-            # get game summary and return
-            return render_404()
+            flash('Quiz expired.', category='warning')
+            return redirect(url_for('quiz.score', quiz_id=quiz_id))
 
         quiz_ques = db.execute("SELECT * FROM quiz_question WHERE quiz_id = ? AND locked = 0 ORDER BY id DESC",
                                (quiz_id,)).fetchone()
@@ -226,6 +252,10 @@ def question(quiz_id):
         elif datetime.datetime.strptime(quiz_ques['created_at'],
                                         current_app.config['DATETIME_FORMAT']) + datetime.timedelta(
             seconds=int(current_app.config['QUESTION_TIMEOUT_SECONDS'])) <= now:
+            if quiz_ques['question_no'] >= 10:
+                return _quiz_complete_action(db)
+
+            flash('Question #%s expired' % quiz_ques['question_no'], category='warning')
             db.execute("UPDATE quiz_question SET locked = 1 WHERE quiz_id = ? AND locked = 0", (quiz_id,))
             question_id = _generate_random_question(db=db, quiz_id=quiz_id, question_no=quiz_ques['question_no'] + 1)
             db.commit()
@@ -233,7 +263,7 @@ def question(quiz_id):
         else:
             question_id = quiz_ques['id']
 
-        context = get_context(question_id)
+        context = _get_context(question_id)
         return render_template('quiz/question.html', **context), 200
 
     def post():
@@ -271,16 +301,14 @@ def question(quiz_id):
             flash("Wrong answer.", category='danger')
 
         db.execute("UPDATE quiz_question SET user_answer = ?, locked = 1 WHERE id = ?", (answer, question_id))
-        if quiz_ques['question_no'] < 10:
-            question_id = _generate_random_question(db=db, quiz_id=quiz_id, question_no=quiz_ques['question_no'] + 1)
-        else:
-            db.execute("UPDATE quiz_state SET locked = 1 WHERE id = ?", quiz_id)
-            db.commit()
-            return redirect(url_for('home'))
-            # show the score board
+        if quiz_ques['question_no'] >= 10:
+            flash('Quiz complete', category='info')
+            return _quiz_complete_action(db=db)
+
+        question_id = _generate_random_question(db=db, quiz_id=quiz_id, question_no=quiz_ques['question_no'] + 1)
         db.commit()
 
-        context = get_context(question_id)
+        context = _get_context(question_id)
         return render_template('quiz/question.html', **context), 200
 
     if request.method == 'GET':

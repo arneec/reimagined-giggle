@@ -1,0 +1,42 @@
+{% extends '_base.html' %}
+
+{% block header %}
+<h1>{% block title %}Quiz log{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<div>
+    <h3 class="my-3">Score: <span class="text-primary">{{score}}</span></h3>
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">Question Number</th>
+            <th scope="col">Question</th>
+            <th scope="col">Your Answer</th>
+            <th scope="col">Result</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for log in quiz_log %}
+        <tr>
+            <th scope="row">{{ log.question_no }}</th>
+            <td>{{ log.question }}</td>
+            <td>{{ log.option }}</td>
+            <td>
+                {% if log.is_correct is none %}
+                <span class="text-warning">SKIPPED</span>
+                {% elif  not log.is_correct %}
+                <span class="text-danger">WRONG</span>
+                {% else %}
+                <span class="text-success">CORRECT</span>
+                {%endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <div class="my-3">
+        <a href="{{ url_for('home') }}" class="btn btn-primary">Go Home</a>
+    </div>
+</div>
+{% endblock %}
