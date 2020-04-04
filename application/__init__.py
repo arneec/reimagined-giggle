@@ -3,7 +3,7 @@ import os
 from logging.config import dictConfig
 
 import werkzeug
-from flask import Flask, render_template, session, g
+from flask import Flask, render_template, session, g, request
 
 from application.db import get_db
 from application.auth import login_required
@@ -38,6 +38,7 @@ def create_app():
         DATETIME_FORMAT=os.environ.get("DATETIME_FORMAT"),
         QUESTION_TIMEOUT_SECONDS=int(os.environ.get("QUESTION_TIMEOUT_SECONDS")),
         QUIZ_TIMEOUT_SECONDS=int(os.environ.get("QUIZ_TIMEOUT_SECONDS")),
+        PAGE_SIZE=int(os.environ.get("PAGE_SIZE"))
     )
 
     from . import db
@@ -74,18 +75,31 @@ def create_app():
     @app.route('/', methods=("GET",))
     @login_required
     def home():
+        page = 1
+        if 'page' in request.args:
+            try:
+                page = int(request.args['page'])
+                assert page > 0
+            except Exception:
+                page = 1
         db = get_db()
         leaderboards = db.execute(
-            "SELECT user.username, quiz_state.id as quiz_id, COUNT(question_option.id) AS score "
+            "SELECT user.username, quiz_state.id as quiz_id, "
+            "SUM(CASE WHEN question_option.is_correct THEN 1 ELSE 0 END) AS score "
             "FROM user "
             "INNER JOIN quiz_state on user.id=quiz_state.user_id "
             "INNER JOIN quiz_question on quiz_state.id=quiz_question.quiz_id "
-            "INNER JOIN question_option on quiz_question.user_answer = question_option.id "
-            "WHERE quiz_state.locked = 1 AND question_option.is_correct = 1 "
+            "LEFT OUTER JOIN question_option on quiz_question.user_answer = question_option.id "
+            "WHERE quiz_state.locked = 1 "
             "GROUP BY user.id, quiz_state.id "
             "ORDER BY score DESC "
-            "LIMIT 10").fetchall()
+            F"LIMIT {app.config['PAGE_SIZE']} OFFSET {(page - 1) * app.config['PAGE_SIZE']}").fetchall()
 
-        return render_template("home.html", leaderboards=leaderboards)
+        total_quizes = db.execute("SELECT COUNT(*) AS total from quiz_state WHERE locked = 1").fetchone()['total']
+        total_pages = total_quizes // app.config['PAGE_SIZE']
+        if total_quizes % app.config['PAGE_SIZE']:
+            total_pages += 1
+
+        return render_template("home.html", leaderboards=leaderboards, offset=page - 1, total_pages=total_pages)
 
     return app

@@ -23,7 +23,7 @@
             <tbody>
             {% for lb in leaderboards %}
             <tr>
-                <th scope="row">{{ loop.index }}</th>
+                <th scope="row">{{ config.PAGE_SIZE * offset + loop.index }}</th>
                 <td>{{ lb.username }}</td>
                 <td>{{ lb.quiz_id }}</td>
                 <td>{{ lb.score }}</td>
@@ -31,6 +31,21 @@
             {% endfor %}
             </tbody>
         </table>
+        <nav>
+            <ul class="pagination">
+                <li class="page-item {% if not offset %}disabled{% endif %}">
+                    <a class="page-link" href="?page={{offset}}" tabindex="-1">Previous</a>
+                </li>
+                {% for t in range(total_pages) %}
+                <li class="page-item {% if offset+1 == loop.index %}active{%endif%}">
+                    <a class="page-link" href="?page={{loop.index}}">{{loop.index}}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {%if total_pages-1 == offset%}disabled{%endif%}">
+                    <a class="page-link" href="?page={{offset+2}}">Next</a>
+                </li>
+            </ul>
+        </nav>
     </div>
 </div>
 {% endblock %}
