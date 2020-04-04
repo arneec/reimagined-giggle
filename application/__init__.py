@@ -44,6 +44,18 @@ def create_app():
     @app.route('/home', methods=("GET",))
     @login_required
     def home():
-        return render_template("home.html")
+        db = get_db()
+        leaderboards = db.execute(
+            "SELECT user.username, quiz_state.id as quiz_id, COUNT(question_option.id) AS score "
+            "FROM user "
+            "INNER JOIN quiz_state on user.id=quiz_state.user_id "
+            "INNER JOIN quiz_question on quiz_state.id=quiz_question.quiz_id "
+            "INNER JOIN question_option on quiz_question.user_answer = question_option.id "
+            "WHERE question_option.is_correct = 1 "
+            "GROUP BY user.id, quiz_state.id "
+            "ORDER BY score DESC "
+            "LIMIT 10").fetchall()
+
+        return render_template("home.html", leaderboards=leaderboards)
 
     return app

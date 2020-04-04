@@ -16,25 +16,19 @@
             <tr>
                 <th scope="col">#</th>
                 <th scope="col">Username</th>
+                <th scope="col">Quiz id</th>
                 <th scope="col">Score</th>
             </tr>
             </thead>
             <tbody>
+            {% for lb in leaderboards %}
             <tr>
-                <th scope="row">1</th>
-                <td>Mark</td>
-                <td>9</td>
+                <th scope="row">{{ loop.index }}</th>
+                <td>{{ lb.username }}</td>
+                <td>{{ lb.quiz_id }}</td>
+                <td>{{ lb.score }}</td>
             </tr>
-            <tr>
-                <th scope="row">2</th>
-                <td>Jacob</td>
-                <td>7</td>
-            </tr>
-            <tr>
-                <th scope="row">3</th>
-                <td>Larry</td>
-                <td>5</td>
-            </tr>
+            {% endfor %}
             </tbody>
         </table>
     </div>
