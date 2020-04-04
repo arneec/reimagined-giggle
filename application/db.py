@@ -1,3 +1,5 @@
+import os
+
 import click
 import sqlite3
 
@@ -40,3 +42,7 @@ def init_db_command():
 def init_app(app):
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
+    if not os.path.exists(os.path.join(app.root_path, 'db.sqlite')):
+        with app.app_context():
+            init_db()
+            print("Initialized the database.")
