@@ -317,8 +317,14 @@ def create_quiz():
         - create a quiz game if no any game is alive else return the alive quiz game
 
         - lock all the unlocked games if new game is being created
+
+        - DO NOT CREATE THE GAME IF LESS THAN 10 MOVIES SCRAPPED IN DB
     """
     db = get_db()
+    if db.execute("SELECT COUNT(*) as count FROM movie").fetchone()['count'] < 10:
+        error = "Not enough questions in the database. Game could not be loaded."
+        return render_template('quiz/error.html', error=error)
+
     quiz_states = db.execute("SELECT * FROM quiz_state WHERE user_id = ? AND locked = 0", (g.user['id'],)).fetchall()
     if quiz_states:
         if is_game_alive(quiz_states[-1]['created_at']):

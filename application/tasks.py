@@ -81,10 +81,11 @@ def _scrape_movie_data(link):
     if data['@type'] != 'Movie':
         pprint("Skipping %s as it is not a movie." % link)
         return None
+    description = re.sub(data['name'], '', data['description'], flags=re.I)
     movie_data = {
         'general': {
             'name': data['name'],
-            'description': data['description'],
+            'description': description,
             'rating': '%.1f' % float(data['aggregateRating']['ratingValue']),
             'released_date': data['datePublished'],
         },
@@ -144,7 +145,7 @@ def scrape_home_movies_command(link, populate):
     else:
         links = _scrape_movies_list(link)
     for _ in links:
-        pprint("Scrapping %s" % _)
+        print("\nScrapping %s" % _)
         movie_data = _scrape_movie_data(_)
         if populate and movie_data is not None:
             _populate_movie(movie_data)
