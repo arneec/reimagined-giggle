@@ -27,6 +27,7 @@ def is_game_alive(date_time: str) -> bool:
 
 def rating_options(rating: str, num: int = 3):
     """
+
         rating: answer rating passed to avoid duplication of correct answer
         num: number of random options to return
     """
@@ -42,15 +43,9 @@ def rating_options(rating: str, num: int = 3):
 
 def general_field_options(field: str, value: str, num: int = 3):
     db = get_db()
-    rows = db.execute(
-        F"SELECT {field} FROM movie WHERE {field} != ? ORDER BY RANDOM()",
-        (value,)).fetchall()
-    options = []
-    for row in rows:
-        if row[field] not in options and row[field] != value:
-            options.append(row[field])
-            if len(options) == num:
-                break
+    rows = db.execute(F"SELECT DISTINCT {field} FROM movie WHERE {field} != ? ORDER BY RANDOM()",
+                      (value,)).fetchall()
+    options = [rows[i][field] for i in range(num)]
     return options
 
 
@@ -58,13 +53,9 @@ def randomly_group_items(items, answers, tot_grps=3, max_per_grp=3):
     assert tot_grps * max_per_grp <= len(items)
     groups = []
     indx = 0
-    while True:
+    while len(groups) != tot_grps:
         pick_no_items = random.randint(1, max_per_grp)
-        group = set(items[indx:indx + pick_no_items])
-        if group not in groups and group != answers:
-            groups.append(group)
-            if len(groups) == tot_grps:
-                break
+        groups.append(items[indx: indx + pick_no_items])
         indx += pick_no_items
 
     return groups
@@ -153,7 +144,7 @@ def _generate_random_question(db, quiz_id, question_no):
                                       ON movie.id = movie_detail.movie_id
                                       WHERE movie.id = ? AND movie_detail.key = ?''',
                                    (movie['id'], template.field)).fetchall()
-        answer = {i['value'] for i in movie_details}
+        answer = [i['value'] for i in movie_details]
         options = template.get_option(*answer)
         answer = ', '.join(answer)
     else:
@@ -168,7 +159,7 @@ def _generate_random_question(db, quiz_id, question_no):
     db.execute("INSERT INTO question_option (question_id, option, is_correct) VALUES (?, ?, ?)",
                (quiz_question.lastrowid, answer, 1))
     db.executemany("INSERT INTO question_option (question_id, option) VALUES (?, ?)",
-                   [(quiz_question.lastrowid, ', '.join(opt) if isinstance(opt, set) else opt) for opt in options])
+                   [(quiz_question.lastrowid, ', '.join(opt) if isinstance(opt, list) else opt) for opt in options])
     return quiz_question.lastrowid
 
 
