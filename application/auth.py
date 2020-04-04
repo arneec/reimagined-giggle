@@ -44,7 +44,7 @@ def register():
                 db.execute("SELECT id FROM user WHERE username = ?", (username,)).fetchone()
                 is not None
         ):
-            error = "User {} is already registered.".format(username)
+            error = "User {} is already registered".format(username)
 
         if error is None:
             db.execute(
@@ -54,33 +54,59 @@ def register():
             db.commit()
             activation_file = get_activation_file()
             open(activation_file, "w").write(uuid.uuid4().hex)
-            return redirect(url_for("auth.activate", username=username))
 
-        flash(error)
+            return redirect(url_for("auth.activate_username", username=username))
+
+        flash(error, category='danger')
 
     return render_template("auth/register.html")
 
 
+@bp.route("/activate", methods=("GET", "POST"))
+def activate():
+    if request.method == "POST":
+        username = request.form["username"]
+
+        db = get_db()
+        if not username:
+            error = "Username is required"
+        else:
+            user = db.execute("SELECT id, is_activated FROM user WHERE username = ?", (username,)).fetchone()
+            if user is None:
+                error = "Username %s not found" % username
+
+            elif user['is_activated']:
+                error = "Username %s is already activated " % username
+
+            else:
+                return redirect(url_for('auth.activate_username', username=username))
+
+        flash(error, category='danger')
+
+    return render_template("auth/activate.html")
+
+
 @bp.route("/activate/<username>", methods=("GET", "POST"))
-def activate(username):
+def activate_username(username):
     if request.method == "POST":
         activation_code = request.form["activation"]
         activation_file = get_activation_file()
         error = None
 
         if not activation_code:
-            error = "Activation code is required."
+            error = "Activation code is required"
         elif not os.path.exists(activation_file) or open(activation_file, 'r').read() != activation_code:
-            error = "Invalid activation code."
+            error = "Invalid activation code"
         else:
             db = get_db()
-            db.execute("UPDATE user SET is_registered = ? WHERE username = ?", (True, username))
+            db.execute("UPDATE user SET is_activated = ? WHERE username = ?", (True, username))
             db.commit()
+            flash("User activated", category='success')
             return redirect(url_for("auth.login"))
 
-        flash(error)
+        flash(error, category='danger')
 
-    return render_template("auth/activate.html")
+    return render_template("auth/activate_username.html")
 
 
 @bp.route("/login", methods=("GET", "POST"))
@@ -98,16 +124,17 @@ def login():
         ).fetchone()
 
         if user is None:
-            error = "Incorrect username."
+            error = "Incorrect username"
         elif not check_password_hash(user["password"], password):
-            error = "Incorrect password."
-
+            error = "Incorrect password"
+        elif not user["is_activated"]:
+            error = "User not activated"
         if error is None:
             session.clear()
             session["user_id"] = user["id"]
             return redirect(url_for("home"))
 
-        flash(error)
+        flash(error, category='danger')
 
     return render_template("auth/login.html")
 

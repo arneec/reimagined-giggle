@@ -63,7 +63,7 @@ def create_app():
         app.logger.exception(e)
         return '<h1>Some error occurred in the server.</h1><p>Please REFRESH to continue.</p>'
 
-    @app.route('/home', methods=("GET",))
+    @app.route('/', methods=("GET",))
     @login_required
     def home():
         db = get_db()
@@ -73,7 +73,7 @@ def create_app():
             "INNER JOIN quiz_state on user.id=quiz_state.user_id "
             "INNER JOIN quiz_question on quiz_state.id=quiz_question.quiz_id "
             "INNER JOIN question_option on quiz_question.user_answer = question_option.id "
-            "WHERE question_option.is_correct = 1 "
+            "WHERE quiz_state.locked = 1 AND question_option.is_correct = 1 "
             "GROUP BY user.id, quiz_state.id "
             "ORDER BY score DESC "
             "LIMIT 10").fetchall()
