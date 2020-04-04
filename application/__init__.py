@@ -27,19 +27,23 @@ dictConfig({
 })
 
 
-def create_app():
+def create_app(test_config=None):
     app = Flask(__name__)
-
     db_path = os.path.join(os.path.dirname(__file__), "db.sqlite")
-    app.config.from_mapping(
-        SECRET_KEY=os.environ.get("SECRET_KEY"),
-        DATABASE=db_path,
-        ACTIVATION_FILE=os.environ.get("ACTIVATION_FILE"),
-        DATETIME_FORMAT=os.environ.get("DATETIME_FORMAT"),
-        QUESTION_TIMEOUT_SECONDS=int(os.environ.get("QUESTION_TIMEOUT_SECONDS")),
-        QUIZ_TIMEOUT_SECONDS=int(os.environ.get("QUIZ_TIMEOUT_SECONDS")),
-        PAGE_SIZE=int(os.environ.get("PAGE_SIZE"))
-    )
+
+    if test_config is None:
+        app.config.from_mapping(
+            SECRET_KEY=os.environ.get("SECRET_KEY"),
+            DATABASE=db_path,
+            ACTIVATION_FILE=os.environ.get("ACTIVATION_FILE"),
+            DATETIME_FORMAT=os.environ.get("DATETIME_FORMAT"),
+            QUESTION_TIMEOUT_SECONDS=int(os.environ.get("QUESTION_TIMEOUT_SECONDS")),
+            QUIZ_TIMEOUT_SECONDS=int(os.environ.get("QUIZ_TIMEOUT_SECONDS")),
+            PAGE_SIZE=int(os.environ.get("PAGE_SIZE"))
+        )
+
+    else:
+        app.config.from_mapping(test_config)
 
     from . import db
     db.init_app(app)
