@@ -62,3 +62,9 @@ create a new quiz @ ``/quiz/create``
 continue the quiz came @ ``/quiz/<quiz_id>/question``
 
 access the quiz log attempted and total score of quiz completed @ ``/quiz/<quiz_id>/score``
+
+
+### Running the tests
+on the root project directory
+
+```$ pytest```
