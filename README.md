@@ -39,7 +39,7 @@ _eg. populate db with some popular movies_
 
 scraping specified imdb movie link and populating the database
 
-_eg. populate db with some popular movies_
+_eg. populate db with given movie detail link_
 
 ```$ flask scrape-movie 'title/tt2398149/?ref_=ttls_li_tt' --populate```
 
