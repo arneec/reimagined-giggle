@@ -49,7 +49,7 @@ def runner(app):
     return app.test_cli_runner()
 
 
-class AuthActions(object):
+class AuthActions:
     def __init__(self, client):
         self._client = client
 
@@ -58,6 +58,14 @@ class AuthActions(object):
             '/auth/login',
             data={'username': username, 'password': password}
         )
+
+    def check_login_required(self, username='test', password='test'):
+        assert self._client.get('/').status_code == 302
+        response = self._client.get('/')
+        assert response.headers['Location'] == 'http://localhost/auth/login'
+
+        self.login(username, password)
+        assert self._client.get('/').status_code == 200
 
     def logout(self):
         return self._client.get('/auth/logout')
@@ -75,6 +83,17 @@ class AuthActions(object):
         )
 
 
+class QuizActions:
+    def __init__(self, client):
+        self._client = client
+        self._app = app
+
+
 @pytest.fixture
 def auth(client):
     return AuthActions(client)
+
+
+@pytest.fixture
+def quiz(client):
+    return QuizActions(client)
