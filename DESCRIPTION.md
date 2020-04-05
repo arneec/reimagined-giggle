@@ -46,3 +46,28 @@ Movie Quiz is an quiz game where 10 random dynamically generated questions are a
     - option : the option text given in the question
     - is_correct : flag to represent if this option is the correct one or not
 
+
+
+#### Application workflow
+
+- Register/Activate/Login
+    - User enters the system and is redirected to login page if not authenticated.
+    - User goes to register page and enters unique username and password.
+    - User is redirected to activation page.
+    - User enters activation code that is inside ``storage`` folder.
+    - After activation user can login with the username and password they registered with.
+
+
+- Home/Quiz/Question/Score
+    - After user logins successfully, user is redirected to home page which has a button to start quiz and table of users and score for the quiz completed.
+    
+    - When user clicks the button to start the quiz, a quiz if created if no any quiz is alive for that user. ``Alive quiz means the quiz which he has started before and left somewhere between and the timeout has not expired for that quiz``.
+
+    - After a quiz has started, users are provided one question and its relevant 4 options at a time that is dynamically generated through the system. To satisfy the constraint that the 4 options are different from each other ``the quiz is not started until at leaset 10 movies are on the database``.
+
+    > Dynamic questions here are generated through the specified templates.
+
+    - User selects one of the option which is saved on the table.
+
+    > Between the workflow of this process many validations are done like quiz time out, question time out also after 10th question submission of user a score board is displayed that consist of questions asked, his answers on each of them and correct or not status.
+

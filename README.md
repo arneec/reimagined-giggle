@@ -55,3 +55,10 @@ enter the activation code on ```/auth/activate/<username>``` to activate the use
 
 once activated user can get access to the system through login @ ```/auth/login```
 
+
+### Quiz
+create a new quiz @ ``/quiz/create``
+
+continue the quiz came @ ``/quiz/<quiz_id>/question``
+
+access the quiz log attempted and total score of quiz completed @ ``/quiz/<quiz_id>/score``
